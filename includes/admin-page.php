@@ -80,8 +80,8 @@ function llms_aweber_integration_section_callback()
 
 function llms_aweber_client_id_render()
 {
-    $value = get_option('llms_aweber_client_id', '');
-    echo '<input type="text" name="llms_aweber_client_id" value="' . esc_attr($value) . '" />';
+    //$value = get_option('llms_aweber_client_id', '');
+    //echo '<input type="text" name="llms_aweber_client_id" value="' . esc_attr($value) . '" />';
 }
 
 function llms_aweber_list_id_render()
