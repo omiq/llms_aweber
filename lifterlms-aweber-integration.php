@@ -2,7 +2,7 @@
 /*
 Plugin Name: LifterLMS AWeber Integration
 Description: Adds users to a specific LifterLMS membership and subscribes them to an AWeber newsletter upon registration.
-Version: 1.7
+Version: 1.8
 Author: Chris Garrett
 */
 
@@ -158,13 +158,6 @@ function llms_aweber_integration_options_page()
             submit_button();
             ?>
         </form>
-        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-            <input type="hidden" name="action" value="save_aweber_auth_code">
-            <?php wp_nonce_field('llms_aweber_save_auth_code', 'llms_aweber_nonce'); ?>
-            <label for="llms_aweber_auth_code">Authorization Code</label>
-            <input type="text" name="llms_aweber_auth_code" id="llms_aweber_auth_code" />
-            <?php submit_button('Save Authorization Code'); ?>
-        </form>
         <button id="test-aweber-credentials" class="button button-secondary">Test Credentials</button>
         <div id="test-aweber-credentials-result"></div>
     </div>
@@ -208,21 +201,24 @@ function llms_aweber_exchange_code_for_tokens()
             ),
         ));
 
+        $result_message = '';
         if (is_wp_error($response)) {
-            error_log('AWeber token request failed: ' . $response->get_error_message());
-            return;
-        }
-
-        $body = wp_remote_retrieve_body($response);
-        $tokens = json_decode($body, true);
-
-        if (isset($tokens['access_token']) && isset($tokens['refresh_token']) && isset($tokens['expires_in'])) {
-            update_option('llms_aweber_access_token', $tokens['access_token']);
-            update_option('llms_aweber_refresh_token', $tokens['refresh_token']);
-            update_option('llms_aweber_token_expiry', time() + $tokens['expires_in']);
+            $result_message = 'AWeber token request failed: ' . $response->get_error_message();
         } else {
-            error_log('AWeber token request failed: ' . $body);
+            $body = wp_remote_retrieve_body($response);
+            $tokens = json_decode($body, true);
+
+            if (isset($tokens['access_token']) && isset($tokens['refresh_token']) && isset($tokens['expires_in'])) {
+                update_option('llms_aweber_access_token', $tokens['access_token']);
+                update_option('llms_aweber_refresh_token', $tokens['refresh_token']);
+                update_option('llms_aweber_token_expiry', time() + $tokens['expires_in']);
+                $result_message = 'AWeber token exchange successful.';
+            } else {
+                $result_message = 'AWeber token request failed: ' . $body;
+            }
         }
+
+        set_transient('llms_aweber_result_message', $result_message, 30);
     }
     wp_redirect(admin_url('options-general.php?page=llms-aweber-integration'));
     exit;
@@ -272,11 +268,13 @@ function subscribe_to_aweber($email, $name, $list_id)
     ));
 
     if (is_wp_error($response)) {
-        error_log('AWeber subscription failed: ' . $response->get_error_message());
+        $result_message = 'AWeber subscription failed: ' . $response->get_error_message();
     } else {
         $body = wp_remote_retrieve_body($response);
-        error_log('AWeber subscription response: ' . $body);
+        $result_message = 'AWeber subscription response: ' . $body;
     }
+
+    set_transient('llms_aweber_subscription_message', $result_message, 30);
 }
 
 function is_access_token_expired()
@@ -299,21 +297,24 @@ function refresh_aweber_access_token()
         ),
     ));
 
+    $result_message = '';
     if (is_wp_error($response)) {
-        error_log('AWeber token refresh failed: ' . $response->get_error_message());
-        return;
-    }
-
-    $body = wp_remote_retrieve_body($response);
-    $tokens = json_decode($body, true);
-
-    if (isset($tokens['access_token']) && isset($tokens['refresh_token']) && isset($tokens['expires_in'])) {
-        update_option('llms_aweber_access_token', $tokens['access_token']);
-        update_option('llms_aweber_refresh_token', $tokens['refresh_token']);
-        update_option('llms_aweber_token_expiry', time() + $tokens['expires_in']);
+        $result_message = 'AWeber token refresh failed: ' . $response->get_error_message();
     } else {
-        error_log('AWeber token refresh response is missing required fields: ' . $body);
+        $body = wp_remote_retrieve_body($response);
+        $tokens = json_decode($body, true);
+
+        if (isset($tokens['access_token']) && isset($tokens['refresh_token']) && isset($tokens['expires_in'])) {
+            update_option('llms_aweber_access_token', $tokens['access_token']);
+            update_option('llms_aweber_refresh_token', $tokens['refresh_token']);
+            update_option('llms_aweber_token_expiry', time() + $tokens['expires_in']);
+            $result_message = 'AWeber token refresh successful.';
+        } else {
+            $result_message = 'AWeber token refresh response is missing required fields: ' . $body;
+        }
     }
+
+    set_transient('llms_aweber_result_message', $result_message, 30);
 }
 
 // Test AWeber Credentials AJAX handler
@@ -325,8 +326,7 @@ function test_aweber_credentials()
     $refresh_token = get_option('llms_aweber_refresh_token');
 
     // Debugging: Log the values being retrieved
-    error_log('Client ID: ' . $client_id);
-    error_log('Refresh Token: ' . $refresh_token);
+    $result_message = 'Client ID: ' . $client_id . '<br>Refresh Token: ' . $refresh_token . '<br>';
 
     if (empty($client_id) || empty($refresh_token)) {
         wp_send_json_error(array('message' => 'Missing AWeber credentials. Please fill in all fields.'));
@@ -349,15 +349,18 @@ function test_aweber_credentials()
     ));
 
     if (is_wp_error($response)) {
-        wp_send_json_error(array('message' => 'AWeber credentials test failed: ' . $response->get_error_message()));
+        $result_message .= 'AWeber credentials test failed: ' . $response->get_error_message();
+        wp_send_json_error(array('message' => $result_message));
     } else {
         $body = wp_remote_retrieve_body($response);
         $tokens = json_decode($body, true);
 
         if (isset($tokens['access_token']) && isset($tokens['refresh_token']) && isset($tokens['expires_in'])) {
-            wp_send_json_success(array('message' => 'AWeber credentials are valid.'));
+            $result_message .= 'AWeber credentials are valid.';
+            wp_send_json_success(array('message' => $result_message));
         } else {
-            wp_send_json_error(array('message' => 'AWeber credentials test failed: ' . $body));
+            $result_message .= 'AWeber credentials test failed: ' . $body;
+            wp_send_json_error(array('message' => $result_message));
         }
     }
 }
@@ -381,4 +384,5 @@ function llms_aweber_integration_uninstall()
     delete_option('llms_aweber_refresh_token');
     delete_option('llms_aweber_token_expiry');
 }
+
 ?>
