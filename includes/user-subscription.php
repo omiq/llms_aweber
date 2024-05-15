@@ -31,6 +31,9 @@ function custom_add_existing_user_to_aweber($user_id, $membership_id)
 
 function subscribe_user_to_aweber($user_id, $list_id)
 {
+
+    error_log( $user_id, $list_id );
+
     $user = get_userdata($user_id);
     $email = $user->user_email;
     $name = $user->display_name;
