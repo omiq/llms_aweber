@@ -2,7 +2,7 @@
 /*
 Plugin Name: LifterLMS AWeber Integration
 Description: Adds users to a specific LifterLMS membership and subscribes them to an AWeber newsletter upon registration.
-Version: 1.3
+Version: 1.5
 Author: Chris Garrett
 */
 
@@ -32,14 +32,14 @@ function custom_add_user_to_membership_and_aweber($user_id) {
 
 function subscribe_to_aweber($email, $name, $list_id) {
     // Your AWeber API credentials
-    $consumer_key = get_option('llms_aweber_consumer_key');
-    $consumer_secret = get_option('llms_aweber_consumer_secret');
+    $client_id = get_option('llms_aweber_client_id');
+    $client_secret = get_option('llms_aweber_client_secret');
     $access_token = get_option('aweber_access_token');
     $refresh_token = get_option('aweber_refresh_token');
 
     // Refresh access token if necessary
     if (is_access_token_expired()) {
-        $tokens = refresh_aweber_access_token($consumer_key, $consumer_secret, $refresh_token);
+        $tokens = refresh_aweber_access_token($client_id, $client_secret, $refresh_token);
         if ($tokens) {
             $access_token = $tokens['access_token'];
             $refresh_token = $tokens['refresh_token'];
@@ -87,7 +87,7 @@ function is_access_token_expired() {
     return time() > $expiry_time;
 }
 
-function refresh_aweber_access_token($consumer_key, $consumer_secret, $refresh_token) {
+function refresh_aweber_access_token($client_id, $client_secret, $refresh_token) {
     // AWeber token refresh URL
     $url = "https://auth.aweber.com/oauth2/token";
 
@@ -98,7 +98,7 @@ function refresh_aweber_access_token($consumer_key, $consumer_secret, $refresh_t
     );
 
     // Set up Basic Authentication
-    $auth = base64_encode("$consumer_key:$consumer_secret");
+    $auth = base64_encode("$client_id:$client_secret");
     $headers = array(
         "Authorization: Basic $auth",
         "Content-Type: application/x-www-form-urlencoded",
@@ -179,8 +179,8 @@ add_action('admin_init', 'llms_aweber_integration_settings_init');
 
 function llms_aweber_integration_settings_init() {
     register_setting('llms_aweber_integration_settings', 'llms_aweber_membership_id');
-    register_setting('llms_aweber_integration_settings', 'llms_aweber_consumer_key');
-    register_setting('llms_aweber_integration_settings', 'llms_aweber_consumer_secret');
+    register_setting('llms_aweber_integration_settings', 'llms_aweber_client_id');
+    register_setting('llms_aweber_integration_settings', 'llms_aweber_client_secret');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_list_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_account_id');
 
@@ -200,17 +200,17 @@ function llms_aweber_integration_settings_init() {
     );
 
     add_settings_field(
-        'llms_aweber_consumer_key',
-        'AWeber Consumer Key',
-        'llms_aweber_consumer_key_render',
+        'llms_aweber_client_id',
+        'AWeber Client ID',
+        'llms_aweber_client_id_render',
         'llms-aweber-integration',
         'llms_aweber_integration_section'
     );
 
     add_settings_field(
-        'llms_aweber_consumer_secret',
-        'AWeber Consumer Secret',
-        'llms_aweber_consumer_secret_render',
+        'llms_aweber_client_secret',
+        'AWeber Client Secret',
+        'llms_aweber_client_secret_render',
         'llms-aweber-integration',
         'llms_aweber_integration_section'
     );
@@ -241,14 +241,14 @@ function llms_aweber_membership_id_render() {
     echo '<input type="text" name="llms_aweber_membership_id" value="' . esc_attr($value) . '" />';
 }
 
-function llms_aweber_consumer_key_render() {
-    $value = get_option('llms_aweber_consumer_key', '');
-    echo '<input type="text" name="llms_aweber_consumer_key" value="' . esc_attr($value) . '" />';
+function llms_aweber_client_id_render() {
+    $value = get_option('llms_aweber_client_id', '');
+    echo '<input type="text" name="llms_aweber_client_id" value="' . esc_attr($value) . '" />';
 }
 
-function llms_aweber_consumer_secret_render() {
-    $value = get_option('llms_aweber_consumer_secret', '');
-    echo '<input type="text" name="llms_aweber_consumer_secret" value="' . esc_attr($value) . '" />';
+function llms_aweber_client_secret_render() {
+    $value = get_option('llms_aweber_client_secret', '');
+    echo '<input type="text" name="llms_aweber_client_secret" value="' . esc_attr($value) . '" />';
 }
 
 function llms_aweber_list_id_render() {
@@ -266,11 +266,16 @@ add_action('wp_ajax_test_aweber_credentials', 'test_aweber_credentials');
 
 function test_aweber_credentials() {
     // Your AWeber API credentials
-    $consumer_key = get_option('llms_aweber_consumer_key');
-    $consumer_secret = get_option('llms_aweber_consumer_secret');
+    $client_id = get_option('llms_aweber_client_id');
+    $client_secret = get_option('llms_aweber_client_secret');
     $refresh_token = get_option('aweber_refresh_token');
 
-    if (empty($consumer_key) || empty($consumer_secret) || empty($refresh_token)) {
+    // Debugging: Log the values being retrieved
+    error_log('Client ID: ' . $client_id);
+    error_log('Client Secret: ' . $client_secret);
+    error_log('Refresh Token: ' . $refresh_token);
+
+    if (empty($client_id) || empty($client_secret) || empty($refresh_token)) {
         wp_send_json_error(array('message' => 'Missing AWeber credentials. Please fill in all fields.'));
     }
 
@@ -284,7 +289,7 @@ function test_aweber_credentials() {
     );
 
     // Set up Basic Authentication
-    $auth = base64_encode("$consumer_key:$consumer_secret");
+    $auth = base64_encode("$client_id:$client_secret");
     $headers = array(
         "Authorization: Basic $auth",
         "Content-Type: application/x-www-form-urlencoded",
