@@ -13,7 +13,7 @@ function custom_add_user_to_membership_and_aweber($user_id)
     $list_id = get_option('llms_aweber_list_id');
 
 
-    error_log( $user_id, $membership_id );
+    error_log( 'User registered ' . $user_id . ' adding to membership ' . $membership_id );
 
     if ($membership_id) {
         llms_enroll_student($user_id, $membership_id);
@@ -24,7 +24,7 @@ function custom_add_user_to_membership_and_aweber($user_id)
 
 function custom_add_existing_user_to_aweber($user_id, $membership_id)
 {
-    error_log( $user_id, $membership_id );
+    error_log( 'User ' . $user_id . ' requested to be added to membership ' . $membership_id );
     $specified_membership_id = get_option('llms_aweber_membership_id');
     $list_id = get_option('llms_aweber_list_id');
 
