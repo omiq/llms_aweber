@@ -30,7 +30,6 @@ add_action('admin_init', 'llms_aweber_integration_settings_init');
 function llms_aweber_integration_settings_init()
 {
     register_setting('llms_aweber_integration_settings', 'llms_aweber_client_id');
-    register_setting('llms_aweber_integration_settings', 'llms_aweber_client_secret');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_list_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_account_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_code_verifier');
@@ -50,14 +49,6 @@ function llms_aweber_integration_settings_init()
         'llms_aweber_client_id',
         'AWeber Client ID',
         'llms_aweber_client_id_render',
-        'llms-aweber-integration',
-        'llms_aweber_integration_section'
-    );
-
-    add_settings_field(
-        'llms_aweber_client_secret',
-        'AWeber Client Secret',
-        'llms_aweber_client_secret_render',
         'llms-aweber-integration',
         'llms_aweber_integration_section'
     );
@@ -104,12 +95,6 @@ function llms_aweber_client_id_render()
 {
     $value = get_option('llms_aweber_client_id', '');
     echo '<input type="text" name="llms_aweber_client_id" value="' . esc_attr($value) . '" />';
-}
-
-function llms_aweber_client_secret_render()
-{
-    $value = get_option('llms_aweber_client_secret', '');
-    echo '<input type="text" name="llms_aweber_client_secret" value="' . esc_attr($value) . '" />';
 }
 
 function llms_aweber_list_id_render()
@@ -210,7 +195,6 @@ function llms_aweber_exchange_code_for_tokens()
         update_option('llms_aweber_auth_code', $authorization_code);
 
         $client_id = get_option('llms_aweber_client_id');
-        $client_secret = get_option('llms_aweber_client_secret');
         $code_verifier = get_option('llms_aweber_code_verifier');
         $redirect_uri = 'urn:ietf:wg:oauth:2.0:oob';
 
@@ -218,7 +202,6 @@ function llms_aweber_exchange_code_for_tokens()
             'body' => array(
                 'grant_type' => 'authorization_code',
                 'client_id' => $client_id,
-                'client_secret' => $client_secret,
                 'code' => $authorization_code,
                 'redirect_uri' => $redirect_uri,
                 'code_verifier' => $code_verifier,
@@ -305,15 +288,14 @@ function is_access_token_expired()
 function refresh_aweber_access_token()
 {
     $client_id = get_option('llms_aweber_client_id');
-    $client_secret = get_option('llms_aweber_client_secret');
     $refresh_token = get_option('llms_aweber_refresh_token');
 
     $response = wp_remote_post('https://auth.aweber.com/oauth2/token', array(
         'body' => array(
             'grant_type' => 'refresh_token',
             'client_id' => $client_id,
-            'client_secret' => $client_secret,
             'refresh_token' => $refresh_token,
+            'redirect_uri' => 'urn:ietf:wg:oauth:2.0:oob',
         ),
     ));
 
@@ -340,15 +322,13 @@ add_action('wp_ajax_test_aweber_credentials', 'test_aweber_credentials');
 function test_aweber_credentials()
 {
     $client_id = get_option('llms_aweber_client_id');
-    $client_secret = get_option('llms_aweber_client_secret');
     $refresh_token = get_option('llms_aweber_refresh_token');
 
     // Debugging: Log the values being retrieved
     error_log('Client ID: ' . $client_id);
-    error_log('Client Secret: ' . $client_secret);
     error_log('Refresh Token: ' . $refresh_token);
 
-    if (empty($client_id) || empty($client_secret) || empty($refresh_token)) {
+    if (empty($client_id) || empty($refresh_token)) {
         wp_send_json_error(array('message' => 'Missing AWeber credentials. Please fill in all fields.'));
     }
 
@@ -357,17 +337,15 @@ function test_aweber_credentials()
     $data = array(
         'grant_type' => 'refresh_token',
         'refresh_token' => $refresh_token,
-    );
-
-    $auth = base64_encode("$client_id:$client_secret");
-    $headers = array(
-        "Authorization: Basic $auth",
-        "Content-Type: application/x-www-form-urlencoded",
+        'client_id' => $client_id,
+        'redirect_uri' => 'urn:ietf:wg:oauth:2.0:oob',
     );
 
     $response = wp_remote_post($url, array(
-        'headers' => $headers,
         'body' => http_build_query($data),
+        'headers' => array(
+            "Content-Type: application/x-www-form-urlencoded",
+        ),
     ));
 
     if (is_wp_error($response)) {
