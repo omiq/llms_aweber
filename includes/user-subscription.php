@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 
 // Hook into user registration and membership enrollment
 add_action('lifterlms_user_registered', 'custom_add_user_to_membership_and_aweber', 10, 1);
-add_action('llms_user_enrolled_in_membership', 'custom_add_existing_user_to_aweber', 10, 2);
+add_action('llms_user_added_to_membership_level', 'custom_add_existing_user_to_aweber', 10, 2);
 
 function custom_add_user_to_membership_and_aweber($user_id)
 {
@@ -14,7 +14,7 @@ function custom_add_user_to_membership_and_aweber($user_id)
 
 
     error_log( $user_id, $membership_id );
-    
+
     if ($membership_id) {
         llms_enroll_student($user_id, $membership_id);
     }
