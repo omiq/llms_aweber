@@ -66,7 +66,7 @@ function llms_aweber_integration_settings_init()
 
     add_settings_field(
         'llms_aweber_auth_code',
-        'AWeber Authorization Code',
+        ' ',
         'llms_aweber_auth_code_render',
         'llms-aweber-integration',
         'llms_aweber_integration_section'
