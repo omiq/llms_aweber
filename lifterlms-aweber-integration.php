@@ -2,7 +2,7 @@
 /*
 Plugin Name: LifterLMS AWeber Integration
 Description: Adds users to a specific LifterLMS membership and subscribes them to an AWeber newsletter upon registration.
-Version: 1.0
+Version: 1.6
 Author: Chris Garrett
 */
 
@@ -118,6 +118,34 @@ function llms_get_aweber_authorize_url() {
     ));
 
     return $authorize_url;
+}
+
+// Define the settings page function
+function llms_aweber_integration_options_page() {
+    ?>
+    <div class="wrap">
+        <h1>LifterLMS AWeber Integration Settings</h1>
+        <form method="post" action="options.php">
+            <?php
+            settings_fields('llms_aweber_integration_settings');
+            do_settings_sections('llms-aweber-integration');
+            submit_button();
+            ?>
+        </form>
+        <button id="test-aweber-credentials" class="button button-secondary">Test Credentials</button>
+        <div id="test-aweber-credentials-result"></div>
+    </div>
+    <script type="text/javascript">
+    document.getElementById('test-aweber-credentials').addEventListener('click', function() {
+        var data = {
+            'action': 'test_aweber_credentials'
+        };
+        jQuery.post(ajaxurl, data, function(response) {
+            document.getElementById('test-aweber-credentials-result').innerHTML = response.data.message;
+        });
+    });
+    </script>
+    <?php
 }
 
 // Handle the authorization code input from the user
