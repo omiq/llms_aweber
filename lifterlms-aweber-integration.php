@@ -2,7 +2,7 @@
 /*
 Plugin Name: LifterLMS AWeber Integration
 Description: Adds users to a specific LifterLMS membership and subscribes them to an AWeber newsletter upon registration.
-Version: 1.2
+Version: 1.3
 Author: Chris Garrett
 */
 
@@ -269,6 +269,10 @@ function test_aweber_credentials() {
     $consumer_key = get_option('llms_aweber_consumer_key');
     $consumer_secret = get_option('llms_aweber_consumer_secret');
     $refresh_token = get_option('aweber_refresh_token');
+
+    if (empty($consumer_key) || empty($consumer_secret) || empty($refresh_token)) {
+        wp_send_json_error(array('message' => 'Missing AWeber credentials. Please fill in all fields.'));
+    }
 
     // AWeber token refresh URL
     $url = "https://auth.aweber.com/oauth2/token";
