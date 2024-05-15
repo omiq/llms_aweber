@@ -16,7 +16,7 @@ function llms_aweber_integration_menu()
 
 function llms_aweber_integration_settings_init()
 {
-    register_setting('llms_aweber_integration_settings', 'llms_aweber_client_id');
+    //register_setting('llms_aweber_integration_settings', 'llms_aweber_client_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_list_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_account_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_code_verifier');
@@ -32,13 +32,14 @@ function llms_aweber_integration_settings_init()
         'llms-aweber-integration'
     );
 
-    add_settings_field(
+   /* add_settings_field(
         'llms_aweber_client_id',
         'AWeber Client ID',
         'llms_aweber_client_id_render',
         'llms-aweber-integration',
         'llms_aweber_integration_section'
-    );
+    ); 
+    */
 
     add_settings_field(
         'llms_aweber_list_id',
