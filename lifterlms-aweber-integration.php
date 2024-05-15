@@ -2,7 +2,7 @@
 /*
 Plugin Name: LifterLMS AWeber Integration
 Description: Adds users to a specific LifterLMS membership and subscribes them to an AWeber newsletter upon registration.
-Version: 1.6
+Version: 1.7
 Author: Chris Garrett
 */
 
@@ -102,19 +102,18 @@ function llms_aweber_account_id_render() {
     $value = get_option('llms_aweber_account_id', '');
     echo '<input type="text" name="llms_aweber_account_id" value="' . esc_attr($value) . '" />';
 }
+
 function llms_aweber_authorize_button_render() {
     $authorize_url = llms_get_aweber_authorize_url();
     echo '<a href="' . esc_url($authorize_url) . '" class="button button-primary" target="_blank">Authorize with AWeber</a>';
     echo '<p class="description">Click the button above to authorize with AWeber. Copy the authorization code and paste it below.</p>';
 }
 
-
 function llms_aweber_auth_code_render() {
     $value = get_option('llms_aweber_auth_code', '');
     echo '<input type="text" name="llms_aweber_auth_code" value="' . esc_attr($value) . '" />';
     echo '<p class="description">Paste the authorization code obtained from AWeber here and save settings.</p>';
 }
-
 
 function llms_get_aweber_authorize_url() {
     $client_id = get_option('llms_aweber_client_id');
@@ -149,10 +148,21 @@ function llms_aweber_integration_options_page() {
             submit_button();
             ?>
         </form>
+        <button id="test-aweber-credentials" class="button button-secondary">Test Credentials</button>
+        <div id="test-aweber-credentials-result"></div>
     </div>
+    <script type="text/javascript">
+    document.getElementById('test-aweber-credentials').addEventListener('click', function() {
+        var data = {
+            'action': 'test_aweber_credentials'
+        };
+        jQuery.post(ajaxurl, data, function(response) {
+            document.getElementById('test-aweber-credentials-result').innerHTML = response.data.message;
+        });
+    });
+    </script>
     <?php
 }
-
 
 // Handle the authorization code input from the user
 add_action('admin_post_save_aweber_auth_code', 'llms_aweber_exchange_code_for_tokens');
@@ -162,7 +172,7 @@ function llms_aweber_exchange_code_for_tokens() {
         return;
     }
 
-    if (isset($_POST['llms_aweber_auth_code'])) {
+    if (isset($_POST['llms_aweber_auth_code']) && check_admin_referer('llms_aweber_save_auth_code', 'llms_aweber_nonce')) {
         $authorization_code = sanitize_text_field($_POST['llms_aweber_auth_code']);
         update_option('llms_aweber_auth_code', $authorization_code);
 
@@ -199,7 +209,6 @@ function llms_aweber_exchange_code_for_tokens() {
     wp_redirect(admin_url('options-general.php?page=llms-aweber-integration'));
     exit;
 }
-
 
 // Enroll user and subscribe to AWeber
 add_action('lifterlms_user_registered', 'custom_add_user_to_membership_and_aweber', 10, 1);
@@ -281,6 +290,50 @@ function refresh_aweber_access_token() {
         update_option('llms_aweber_token_expiry', time() + $tokens['expires_in']);
     } else {
         error_log('AWeber token refresh response is missing required fields: ' . $body);
+    }
+}
+
+// Test AWeber Credentials AJAX handler
+add_action('wp_ajax_test_aweber_credentials', 'test_aweber_credentials');
+
+function test_aweber_credentials() {
+    $client_id = get_option('llms_aweber_client_id');
+    $client_secret = get_option('llms_aweber_client_secret');
+    $refresh_token = get_option('llms_aweber_refresh_token');
+
+    if (empty($client_id) || empty($client_secret) || empty($refresh_token)) {
+        wp_send_json_error(array('message' => 'Missing AWeber credentials. Please fill in all fields.'));
+    }
+
+    $url = "https://auth.aweber.com/oauth2/token";
+
+    $data = array(
+        'grant_type' => 'refresh_token',
+        'refresh_token' => $refresh_token,
+    );
+
+    $auth = base64_encode("$client_id:$client_secret");
+    $headers = array(
+        "Authorization: Basic $auth",
+        "Content-Type: application/x-www-form-urlencoded",
+    );
+
+    $response = wp_remote_post($url, array(
+        'headers' => $headers,
+        'body' => http_build_query($data),
+    ));
+
+    if (is_wp_error($response)) {
+        wp_send_json_error(array('message' => 'AWeber credentials test failed: ' . $response->get_error_message()));
+    } else {
+        $body = wp_remote_retrieve_body($response);
+        $tokens = json_decode($body, true);
+
+        if (isset($tokens['access_token']) && isset($tokens['refresh_token']) && isset($tokens['expires_in'])) {
+            wp_send_json_success(array('message' => 'AWeber credentials are valid.'));
+        } else {
+            wp_send_json_error(array('message' => 'AWeber credentials test failed: ' . $body));
+        }
     }
 }
 
