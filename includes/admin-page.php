@@ -75,7 +75,7 @@ function llms_aweber_integration_settings_init()
 
 function llms_aweber_integration_section_callback()
 {
-    echo 'Enter your AWeber API settings below:';
+    echo 'Enter your AWeber settings below:';
 }
 
 function llms_aweber_client_id_render()
