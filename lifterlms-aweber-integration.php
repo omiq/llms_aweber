@@ -102,16 +102,19 @@ function llms_aweber_account_id_render() {
     $value = get_option('llms_aweber_account_id', '');
     echo '<input type="text" name="llms_aweber_account_id" value="' . esc_attr($value) . '" />';
 }
-
 function llms_aweber_authorize_button_render() {
     $authorize_url = llms_get_aweber_authorize_url();
-    echo '<a href="' . esc_url($authorize_url) . '" class="button button-primary">Authorize with AWeber</a>';
+    echo '<a href="' . esc_url($authorize_url) . '" class="button button-primary" target="_blank">Authorize with AWeber</a>';
+    echo '<p class="description">Click the button above to authorize with AWeber. Copy the authorization code and paste it below.</p>';
 }
 
+
 function llms_aweber_auth_code_render() {
-    echo '<input type="text" name="llms_aweber_auth_code" value="" />';
+    $value = get_option('llms_aweber_auth_code', '');
+    echo '<input type="text" name="llms_aweber_auth_code" value="' . esc_attr($value) . '" />';
     echo '<p class="description">Paste the authorization code obtained from AWeber here and save settings.</p>';
 }
+
 
 function llms_get_aweber_authorize_url() {
     $client_id = get_option('llms_aweber_client_id');
@@ -144,30 +147,12 @@ function llms_aweber_integration_options_page() {
             settings_fields('llms_aweber_integration_settings');
             do_settings_sections('llms-aweber-integration');
             submit_button();
-        ?>
+            ?>
         </form>
-        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-            <input type="hidden" name="action" value="save_aweber_auth_code">
-            <?php wp_nonce_field('llms_aweber_save_auth_code', 'llms_aweber_nonce'); ?>
-            <label for="llms_aweber_auth_code">Authorization Code</label>
-            <input type="text" name="llms_aweber_auth_code" id="llms_aweber_auth_code" />
-            <?php submit_button('Save Authorization Code'); ?>
-        </form>
-        <button id="test-aweber-credentials" class="button button-secondary">Test Credentials</button>
-        <div id="test-aweber-credentials-result"></div>
     </div>
-    <script type="text/javascript">
-    document.getElementById('test-aweber-credentials').addEventListener('click', function() {
-        var data = {
-            'action': 'test_aweber_credentials'
-        };
-        jQuery.post(ajaxurl, data, function(response) {
-            document.getElementById('test-aweber-credentials-result').innerHTML = response.data.message;
-        });
-    });
-    </script>
     <?php
 }
+
 
 // Handle the authorization code input from the user
 add_action('admin_post_save_aweber_auth_code', 'llms_aweber_exchange_code_for_tokens');
@@ -177,7 +162,7 @@ function llms_aweber_exchange_code_for_tokens() {
         return;
     }
 
-    if (isset($_POST['llms_aweber_auth_code']) && check_admin_referer('llms_aweber_save_auth_code', 'llms_aweber_nonce')) {
+    if (isset($_POST['llms_aweber_auth_code'])) {
         $authorization_code = sanitize_text_field($_POST['llms_aweber_auth_code']);
         update_option('llms_aweber_auth_code', $authorization_code);
 
@@ -214,6 +199,7 @@ function llms_aweber_exchange_code_for_tokens() {
     wp_redirect(admin_url('options-general.php?page=llms-aweber-integration'));
     exit;
 }
+
 
 // Enroll user and subscribe to AWeber
 add_action('lifterlms_user_registered', 'custom_add_user_to_membership_and_aweber', 10, 1);
