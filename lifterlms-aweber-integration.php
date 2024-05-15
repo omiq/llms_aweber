@@ -134,6 +134,41 @@ function llms_get_aweber_authorize_url() {
     return $authorize_url;
 }
 
+// Define the settings page function
+function llms_aweber_integration_options_page() {
+    ?>
+    <div class="wrap">
+        <h1>LifterLMS AWeber Integration Settings</h1>
+        <form method="post" action="options.php">
+            <?php
+            settings_fields('llms_aweber_integration_settings');
+            do_settings_sections('llms-aweber-integration');
+            submit_button();
+        ?>
+        </form>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <input type="hidden" name="action" value="save_aweber_auth_code">
+            <?php wp_nonce_field('llms_aweber_save_auth_code', 'llms_aweber_nonce'); ?>
+            <label for="llms_aweber_auth_code">Authorization Code</label>
+            <input type="text" name="llms_aweber_auth_code" id="llms_aweber_auth_code" />
+            <?php submit_button('Save Authorization Code'); ?>
+        </form>
+        <button id="test-aweber-credentials" class="button button-secondary">Test Credentials</button>
+        <div id="test-aweber-credentials-result"></div>
+    </div>
+    <script type="text/javascript">
+    document.getElementById('test-aweber-credentials').addEventListener('click', function() {
+        var data = {
+            'action': 'test_aweber_credentials'
+        };
+        jQuery.post(ajaxurl, data, function(response) {
+            document.getElementById('test-aweber-credentials-result').innerHTML = response.data.message;
+        });
+    });
+    </script>
+    <?php
+}
+
 // Handle the authorization code input from the user
 add_action('admin_post_save_aweber_auth_code', 'llms_aweber_exchange_code_for_tokens');
 
@@ -142,7 +177,7 @@ function llms_aweber_exchange_code_for_tokens() {
         return;
     }
 
-    if (isset($_POST['llms_aweber_auth_code'])) {
+    if (isset($_POST['llms_aweber_auth_code']) && check_admin_referer('llms_aweber_save_auth_code', 'llms_aweber_nonce')) {
         $authorization_code = sanitize_text_field($_POST['llms_aweber_auth_code']);
         update_option('llms_aweber_auth_code', $authorization_code);
 
