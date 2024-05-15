@@ -65,6 +65,7 @@ function subscribe_user_to_aweber($user_id, $list_id)
         $result_message = 'AWeber subscription response: ' . $body;
     }
 
+    print($result_message)
     set_transient('llms_aweber_subscription_message', $result_message, 30);
 }
 ?>
