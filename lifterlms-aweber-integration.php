@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: LifterLMS AWeber Integration
-Description: Adds users to a specific LifterLMS membership and subscribes them to an AWeber newsletter upon registration.
-Version: 2.0
+Description: Adds users to a specific LifterLMS membership and subscribes them to an AWeber newsletter upon registration or membership enrollment.
+Version: 2.1
 Author: Chris Garrett
 */
 
