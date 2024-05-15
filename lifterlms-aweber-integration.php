@@ -2,7 +2,7 @@
 /*
 Plugin Name: LifterLMS AWeber Integration
 Description: Adds users to a specific LifterLMS membership and subscribes them to an AWeber newsletter upon registration.
-Version: 1.1
+Version: 1.2
 Author: Chris Garrett
 */
 
@@ -158,7 +158,19 @@ function llms_aweber_integration_options_page() {
             submit_button();
             ?>
         </form>
+        <button id="test-aweber-credentials" class="button button-secondary">Test Credentials</button>
+        <div id="test-aweber-credentials-result"></div>
     </div>
+    <script type="text/javascript">
+    document.getElementById('test-aweber-credentials').addEventListener('click', function() {
+        var data = {
+            'action': 'test_aweber_credentials'
+        };
+        jQuery.post(ajaxurl, data, function(response) {
+            document.getElementById('test-aweber-credentials-result').innerHTML = response.data.message;
+        });
+    });
+    </script>
     <?php
 }
 
@@ -247,5 +259,52 @@ function llms_aweber_list_id_render() {
 function llms_aweber_account_id_render() {
     $value = get_option('llms_aweber_account_id', '');
     echo '<input type="text" name="llms_aweber_account_id" value="' . esc_attr($value) . '" />';
+}
+
+// AJAX handler for testing AWeber credentials
+add_action('wp_ajax_test_aweber_credentials', 'test_aweber_credentials');
+
+function test_aweber_credentials() {
+    // Your AWeber API credentials
+    $consumer_key = get_option('llms_aweber_consumer_key');
+    $consumer_secret = get_option('llms_aweber_consumer_secret');
+    $refresh_token = get_option('aweber_refresh_token');
+
+    // AWeber token refresh URL
+    $url = "https://auth.aweber.com/oauth2/token";
+
+    // Data for token refresh request
+    $data = array(
+        'grant_type' => 'refresh_token',
+        'refresh_token' => $refresh_token,
+    );
+
+    // Set up Basic Authentication
+    $auth = base64_encode("$consumer_key:$consumer_secret");
+    $headers = array(
+        "Authorization: Basic $auth",
+        "Content-Type: application/x-www-form-urlencoded",
+    );
+
+    // Send request to AWeber API
+    $response = wp_remote_post($url, array(
+        'headers' => $headers,
+        'body' => http_build_query($data),
+    ));
+
+    // Handle response
+    if (is_wp_error($response)) {
+        wp_send_json_error(array('message' => 'AWeber credentials test failed: ' . $response->get_error_message()));
+    } else {
+        $body = wp_remote_retrieve_body($response);
+        $tokens = json_decode($body, true);
+
+        // Check if the required keys are present
+        if (isset($tokens['access_token']) && isset($tokens['refresh_token']) && isset($tokens['expires_in'])) {
+            wp_send_json_success(array('message' => 'AWeber credentials are valid.'));
+        } else {
+            wp_send_json_error(array('message' => 'AWeber credentials test failed: ' . $body));
+        }
+    }
 }
 ?>
