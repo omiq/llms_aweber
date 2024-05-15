@@ -7,17 +7,6 @@ if (!defined('ABSPATH')) {
 add_action('lifterlms_user_registered', 'custom_add_user_to_membership_and_aweber', 10, 1);
 add_action('llms_user_enrolled_in_membership', 'custom_add_existing_user_to_aweber', 10, 2);
 
-function custom_add_user_to_membership_and_aweber($user_id)
-{
-    $membership_id = get_option('llms_aweber_membership_id');
-    $list_id = get_option('llms_aweber_list_id');
-
-    if ($membership_id) {
-        llms_enroll_student($user_id, $membership_id);
-    }
-
-    subscribe_user_to_aweber($user_id, $list_id);
-}
 
 
 function subscribe_user_to_aweber($user_id, $list_id)
