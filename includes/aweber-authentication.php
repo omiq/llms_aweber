@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 
 function llms_get_aweber_authorize_url()
 {
-    $client_id = get_option('llms_aweber_client_id');
+    $client_id = 'MQZIkJkg62u4dbF1YeJTR2iX29RYdmxD';
     $redirect_uri = 'urn:ietf:wg:oauth:2.0:oob';
     $code_verifier = base64_encode(random_bytes(32));
     $code_challenge = str_replace(array('+', '/', '='), array('-', '_', ''), base64_encode(hash('sha256', $code_verifier, true)));
@@ -35,7 +35,7 @@ function llms_aweber_exchange_code_for_tokens()
         $authorization_code = sanitize_text_field($_POST['llms_aweber_auth_code']);
         update_option('llms_aweber_auth_code', $authorization_code);
 
-        $client_id = get_option('llms_aweber_client_id');
+        $client_id = 'MQZIkJkg62u4dbF1YeJTR2iX29RYdmxD';
         $code_verifier = get_option('llms_aweber_code_verifier');
         $redirect_uri = 'urn:ietf:wg:oauth:2.0:oob';
 
@@ -74,7 +74,7 @@ function llms_aweber_exchange_code_for_tokens()
 
 function test_aweber_credentials()
 {
-    $client_id = get_option('llms_aweber_client_id');
+    $client_id = 'MQZIkJkg62u4dbF1YeJTR2iX29RYdmxD';
     $refresh_token = get_option('llms_aweber_refresh_token');
 
     $result_message = 'Client ID: ' . $client_id . '<br>Refresh Token: ' . $refresh_token . '<br>';
@@ -124,7 +124,7 @@ function is_access_token_expired()
 
 function refresh_aweber_access_token()
 {
-    $client_id = get_option('llms_aweber_client_id');
+    $client_id = 'MQZIkJkg62u4dbF1YeJTR2iX29RYdmxD';
     $refresh_token = get_option('llms_aweber_refresh_token');
 
     $response = wp_remote_post('https://auth.aweber.com/oauth2/token', array(
@@ -158,7 +158,7 @@ function refresh_aweber_access_token()
 
 function llms_aweber_integration_uninstall()
 {
-    $client_id = get_option('llms_aweber_client_id');
+    $client_id = 'MQZIkJkg62u4dbF1YeJTR2iX29RYdmxD';
     $refresh_token = get_option('llms_aweber_refresh_token');
 
     wp_remote_post('https://auth.aweber.com/oauth2/revoke', array(
