@@ -34,6 +34,7 @@ function llms_aweber_integration_settings_init() {
     register_setting('llms_aweber_integration_settings', 'llms_aweber_access_token');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_refresh_token');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_token_expiry');
+    register_setting('llms_aweber_integration_settings', 'llms_aweber_auth_code');
 
     add_settings_section(
         'llms_aweber_integration_section',
@@ -73,6 +74,14 @@ function llms_aweber_integration_settings_init() {
         'llms-aweber-integration',
         'llms_aweber_integration_section'
     );
+
+    add_settings_field(
+        'llms_aweber_auth_code',
+        'AWeber Authorization Code',
+        'llms_aweber_auth_code_render',
+        'llms-aweber-integration',
+        'llms_aweber_integration_section'
+    );
 }
 
 function llms_aweber_integration_section_callback() {
@@ -99,6 +108,11 @@ function llms_aweber_authorize_button_render() {
     echo '<a href="' . esc_url($authorize_url) . '" class="button button-primary">Authorize with AWeber</a>';
 }
 
+function llms_aweber_auth_code_render() {
+    echo '<input type="text" name="llms_aweber_auth_code" value="" />';
+    echo '<p class="description">Paste the authorization code obtained from AWeber here and save settings.</p>';
+}
+
 function llms_get_aweber_authorize_url() {
     $client_id = get_option('llms_aweber_client_id');
     $redirect_uri = 'urn:ietf:wg:oauth:2.0:oob';
@@ -120,69 +134,50 @@ function llms_get_aweber_authorize_url() {
     return $authorize_url;
 }
 
-// Define the settings page function
-function llms_aweber_integration_options_page() {
-    ?>
-    <div class="wrap">
-        <h1>LifterLMS AWeber Integration Settings</h1>
-        <form method="post" action="options.php">
-            <?php
-            settings_fields('llms_aweber_integration_settings');
-            do_settings_sections('llms-aweber-integration');
-            submit_button();
-            ?>
-        </form>
-        <button id="test-aweber-credentials" class="button button-secondary">Test Credentials</button>
-        <div id="test-aweber-credentials-result"></div>
-    </div>
-    <script type="text/javascript">
-    document.getElementById('test-aweber-credentials').addEventListener('click', function() {
-        var data = {
-            'action': 'test_aweber_credentials'
-        };
-        jQuery.post(ajaxurl, data, function(response) {
-            document.getElementById('test-aweber-credentials-result').innerHTML = response.data.message;
-        });
-    });
-    </script>
-    <?php
-}
-
 // Handle the authorization code input from the user
-if (isset($_POST['aweber_authorization_code'])) {
-    llms_aweber_exchange_code_for_tokens($_POST['aweber_authorization_code']);
-}
+add_action('admin_post_save_aweber_auth_code', 'llms_aweber_exchange_code_for_tokens');
 
-function llms_aweber_exchange_code_for_tokens($authorization_code) {
-    $client_id = get_option('llms_aweber_client_id');
-    $code_verifier = get_option('llms_aweber_code_verifier');
-    $redirect_uri = 'urn:ietf:wg:oauth:2.0:oob';
-
-    $response = wp_remote_post('https://auth.aweber.com/oauth2/token', array(
-        'body' => array(
-            'grant_type' => 'authorization_code',
-            'client_id' => $client_id,
-            'code' => $authorization_code,
-            'redirect_uri' => $redirect_uri,
-            'code_verifier' => $code_verifier,
-        ),
-    ));
-
-    if (is_wp_error($response)) {
-        error_log('AWeber token request failed: ' . $response->get_error_message());
+function llms_aweber_exchange_code_for_tokens() {
+    if (!current_user_can('manage_options')) {
         return;
     }
 
-    $body = wp_remote_retrieve_body($response);
-    $tokens = json_decode($body, true);
+    if (isset($_POST['llms_aweber_auth_code'])) {
+        $authorization_code = sanitize_text_field($_POST['llms_aweber_auth_code']);
+        update_option('llms_aweber_auth_code', $authorization_code);
 
-    if (isset($tokens['access_token']) && isset($tokens['refresh_token']) && isset($tokens['expires_in'])) {
-        update_option('llms_aweber_access_token', $tokens['access_token']);
-        update_option('llms_aweber_refresh_token', $tokens['refresh_token']);
-        update_option('llms_aweber_token_expiry', time() + $tokens['expires_in']);
-    } else {
-        error_log('AWeber token request failed: ' . $body);
+        $client_id = get_option('llms_aweber_client_id');
+        $code_verifier = get_option('llms_aweber_code_verifier');
+        $redirect_uri = 'urn:ietf:wg:oauth:2.0:oob';
+
+        $response = wp_remote_post('https://auth.aweber.com/oauth2/token', array(
+            'body' => array(
+                'grant_type' => 'authorization_code',
+                'client_id' => $client_id,
+                'code' => $authorization_code,
+                'redirect_uri' => $redirect_uri,
+                'code_verifier' => $code_verifier,
+            ),
+        ));
+
+        if (is_wp_error($response)) {
+            error_log('AWeber token request failed: ' . $response->get_error_message());
+            return;
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $tokens = json_decode($body, true);
+
+        if (isset($tokens['access_token']) && isset($tokens['refresh_token']) && isset($tokens['expires_in'])) {
+            update_option('llms_aweber_access_token', $tokens['access_token']);
+            update_option('llms_aweber_refresh_token', $tokens['refresh_token']);
+            update_option('llms_aweber_token_expiry', time() + $tokens['expires_in']);
+        } else {
+            error_log('AWeber token request failed: ' . $body);
+        }
     }
+    wp_redirect(admin_url('options-general.php?page=llms-aweber-integration'));
+    exit;
 }
 
 // Enroll user and subscribe to AWeber
