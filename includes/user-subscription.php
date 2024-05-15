@@ -38,12 +38,10 @@ function subscribe_user_to_aweber($user_id, $list_id)
     $email = $user->user_email;
     $name = $user->display_name;
 
+ 
+    refresh_aweber_access_token();
     $access_token = get_option('llms_aweber_access_token');
 
-    if (is_access_token_expired()) {
-        refresh_aweber_access_token();
-        $access_token = get_option('llms_aweber_access_token');
-    }
 
     $account_id = get_option('llms_aweber_account_id');
     $url = "https://api.aweber.com/1.0/accounts/$account_id/lists/$list_id/subscribers";
