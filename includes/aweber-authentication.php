@@ -16,7 +16,7 @@ function llms_get_aweber_authorize_url()
         'response_type' => 'code',
         'client_id' => $client_id,
         'redirect_uri' => $redirect_uri,
-        'scope' => 'account.read list.read list.write',
+        'scope' => 'account.read list.read list.write subscriber.write',
         'state' => wp_create_nonce('aweber_auth'),
         'code_challenge' => $code_challenge,
         'code_challenge_method' => 'S256',
