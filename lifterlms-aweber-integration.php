@@ -158,13 +158,6 @@ function llms_aweber_integration_options_page()
             submit_button();
             ?>
         </form>
-        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-            <input type="hidden" name="action" value="save_aweber_auth_code">
-            <?php wp_nonce_field('llms_aweber_save_auth_code', 'llms_aweber_nonce'); ?>
-            <label for="llms_aweber_auth_code">Authorization Code</label>
-            <input type="text" name="llms_aweber_auth_code" id="llms_aweber_auth_code" />
-            <?php submit_button('Save Authorization Code'); ?>
-        </form>
         <button id="test-aweber-credentials" class="button button-secondary">Test Credentials</button>
         <div id="test-aweber-credentials-result"></div>
     </div>
