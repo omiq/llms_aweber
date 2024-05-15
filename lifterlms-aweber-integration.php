@@ -40,8 +40,14 @@ function subscribe_to_aweber($email, $name, $list_id) {
     // Refresh access token if necessary
     if (is_access_token_expired()) {
         $tokens = refresh_aweber_access_token($consumer_key, $consumer_secret, $refresh_token);
-        $access_token = $tokens['access_token'];
-        $refresh_token = $tokens['refresh_token'];
+        if ($tokens) {
+            $access_token = $tokens['access_token'];
+            $refresh_token = $tokens['refresh_token'];
+        } else {
+            // Log error if token refresh failed
+            error_log('AWeber token refresh failed');
+            return;
+        }
     }
 
     // AWeber API URL
@@ -112,12 +118,18 @@ function refresh_aweber_access_token($consumer_key, $consumer_secret, $refresh_t
         $body = wp_remote_retrieve_body($response);
         $tokens = json_decode($body, true);
 
-        // Update stored tokens
-        update_option('aweber_access_token', $tokens['access_token']);
-        update_option('aweber_refresh_token', $tokens['refresh_token']);
-        update_option('aweber_access_token_expiry', time() + $tokens['expires_in']);
+        // Check if the required keys are present
+        if (isset($tokens['access_token']) && isset($tokens['refresh_token']) && isset($tokens['expires_in'])) {
+            // Update stored tokens
+            update_option('aweber_access_token', $tokens['access_token']);
+            update_option('aweber_refresh_token', $tokens['refresh_token']);
+            update_option('aweber_access_token_expiry', time() + $tokens['expires_in']);
 
-        return $tokens;
+            return $tokens;
+        } else {
+            error_log('AWeber token refresh response is missing required fields: ' . $body);
+            return null;
+        }
     }
 }
 
