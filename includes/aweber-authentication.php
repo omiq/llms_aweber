@@ -19,15 +19,6 @@ function custom_add_user_to_membership_and_aweber($user_id)
     subscribe_user_to_aweber($user_id, $list_id);
 }
 
-function custom_add_existing_user_to_aweber($user_id, $membership_id)
-{
-    $specified_membership_id = get_option('llms_aweber_membership_id');
-    $list_id = get_option('llms_aweber_list_id');
-
-    if ($membership_id == $specified_membership_id) {
-        subscribe_user_to_aweber($user_id, $list_id);
-    }
-}
 
 function subscribe_user_to_aweber($user_id, $list_id)
 {
