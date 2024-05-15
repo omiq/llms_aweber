@@ -1,43 +1,59 @@
 <?php
-/*
-Plugin Name: LifterLMS AWeber Integration
-Description: Adds users to a specific LifterLMS membership and subscribes them to an AWeber newsletter upon registration.
-Version: 1.9
-Author: Chris Garrett
-*/
-
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-// Include necessary files
-require_once plugin_dir_path(__FILE__) . 'includes/admin-page.php';
-require_once plugin_dir_path(__FILE__) . 'includes/aweber-authentication.php';
-require_once plugin_dir_path(__FILE__) . 'includes/user-subscription.php';
+// Enroll user and subscribe to AWeber
+add_action('lifterlms_user_registered', 'custom_add_user_to_membership_and_aweber', 10, 1);
 
-// Add a menu item for AWeber settings
-add_action('admin_menu', 'llms_aweber_integration_menu');
-
-function llms_aweber_integration_menu()
+function custom_add_user_to_membership_and_aweber($user_id)
 {
-    add_options_page(
-        'LifterLMS AWeber Integration Settings',
-        'LifterLMS AWeber',
-        'manage_options',
-        'llms-aweber-integration',
-        'llms_aweber_integration_options_page'
-    );
+    $membership_id = get_option('llms_aweber_membership_id');
+    $list_id = get_option('llms_aweber_list_id');
+
+    if ($membership_id) {
+        llms_enroll_student($user_id, $membership_id);
+    }
+
+    $user = get_userdata($user_id);
+    $email = $user->user_email;
+    $name = $user->display_name;
+
+    subscribe_to_aweber($email, $name, $list_id);
 }
 
-// Register settings
-add_action('admin_init', 'llms_aweber_integration_settings_init');
+function subscribe_to_aweber($email, $name, $list_id)
+{
+    $access_token = get_option('llms_aweber_access_token');
 
-// Handle the authorization code input from the user
-add_action('admin_post_save_aweber_auth_code', 'llms_aweber_exchange_code_for_tokens');
+    if (is_access_token_expired()) {
+        refresh_aweber_access_token();
+        $access_token = get_option('llms_aweber_access_token');
+    }
 
-// Test AWeber Credentials AJAX handler
-add_action('wp_ajax_test_aweber_credentials', 'test_aweber_credentials');
+    $account_id = get_option('llms_aweber_account_id');
+    $url = "https://api.aweber.com/1.0/accounts/$account_id/lists/$list_id/subscribers";
 
-// Revoke tokens on uninstallation
-register_uninstall_hook(__FILE__, 'llms_aweber_integration_uninstall');
+    $response = wp_remote_post($url, array(
+        'headers' => array(
+            "Authorization: Bearer $access_token",
+            "Content-Type: application/json",
+        ),
+        'body' => json_encode(array(
+            'ws.op' => 'create',
+            'email' => $email,
+            'name' => $name,
+        )),
+    ));
+
+    $result_message = '';
+    if (is_wp_error($response)) {
+        $result_message = 'AWeber subscription failed: ' . $response->get_error_message();
+    } else {
+        $body = wp_remote_retrieve_body($response);
+        $result_message = 'AWeber subscription response: ' . $body;
+    }
+
+    set_transient('llms_aweber_subscription_message', $result_message, 30);
+}
 ?>

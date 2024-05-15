@@ -3,6 +3,17 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
+function llms_aweber_integration_menu()
+{
+    add_options_page(
+        'LifterLMS AWeber Integration Settings',
+        'LifterLMS AWeber',
+        'manage_options',
+        'llms-aweber-integration',
+        'llms_aweber_integration_options_page'
+    );
+}
+
 function llms_aweber_integration_settings_init()
 {
     register_setting('llms_aweber_integration_settings', 'llms_aweber_client_id');
