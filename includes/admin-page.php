@@ -100,14 +100,14 @@ function llms_aweber_authorize_button_render()
 {
     $authorize_url = llms_get_aweber_authorize_url();
     echo '<a href="' . esc_url($authorize_url) . '" class="button button-primary" target="_blank">Authorize with AWeber</a>';
-    echo '<p class="description">Click the button above to authorize with AWeber. Copy the authorization code and paste it below.</p>';
+    echo '<p class="description">Click the button above to authorize with AWeber.</p>';
 }
 
 function llms_aweber_auth_code_render()
 {
     $value = get_option('llms_aweber_auth_code', '');
-    echo '<input type="text" name="llms_aweber_auth_code" value="' . esc_attr($value) . '" />';
-    echo '<p class="description">Paste the authorization code obtained from AWeber here and save settings.</p>';
+    echo '<input type="hidden" name="llms_aweber_auth_code" value="' . esc_attr($value) . '" />';
+    
 }
 
 function llms_aweber_integration_options_page()
@@ -126,6 +126,7 @@ function llms_aweber_integration_options_page()
             <input type="hidden" name="action" value="save_aweber_auth_code">
             <?php wp_nonce_field('llms_aweber_save_auth_code', 'llms_aweber_nonce'); ?>
             <label for="llms_aweber_auth_code">Authorization Code</label>
+            <p>Copy the authorization code and paste it below.</p>
             <input type="text" name="llms_aweber_auth_code" id="llms_aweber_auth_code" />
             <?php submit_button('Save Authorization Code'); ?>
         </form>
