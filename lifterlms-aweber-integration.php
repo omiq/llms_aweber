@@ -210,6 +210,7 @@ function llms_aweber_exchange_code_for_tokens()
         update_option('llms_aweber_auth_code', $authorization_code);
 
         $client_id = get_option('llms_aweber_client_id');
+        $client_secret = get_option('llms_aweber_client_secret');
         $code_verifier = get_option('llms_aweber_code_verifier');
         $redirect_uri = 'urn:ietf:wg:oauth:2.0:oob';
 
@@ -217,6 +218,7 @@ function llms_aweber_exchange_code_for_tokens()
             'body' => array(
                 'grant_type' => 'authorization_code',
                 'client_id' => $client_id,
+                'client_secret' => $client_secret,
                 'code' => $authorization_code,
                 'redirect_uri' => $redirect_uri,
                 'code_verifier' => $code_verifier,
