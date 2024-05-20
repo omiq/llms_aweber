@@ -18,8 +18,8 @@ function llms_aweber_integration_settings_init()
 {
     //register_setting('llms_aweber_integration_settings', 'llms_aweber_client_id');
 
-    register_setting('llms_settings_group', 'llms_aweber_list_id');
-    register_setting('llms_settings_group', 'llms_membership_id');
+    register_setting('llms_aweber_integration_settings', 'llms_aweber_list_id');
+    register_setting('llms_aweber_integration_settings', 'llms_membership_id');
 
     register_setting('llms_aweber_integration_settings', 'llms_aweber_account_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_code_verifier');
