@@ -24,7 +24,7 @@ function llms_aweber_integration_settings_init()
     register_setting('llms_aweber_integration_settings', 'llms_aweber_account_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_code_verifier');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_access_token');
-    register_setting('llms_aweber_integration_settings', 'llms_aweber_refresh_token');
+   // register_setting('llms_aweber_integration_settings', 'llms_aweber_refresh_token');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_token_expiry');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_auth_code');
 
