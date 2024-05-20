@@ -3,29 +3,6 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-function get_llms_memberships() {
-    $memberships = array();
-
-    $args = array(
-        'post_type' => 'llms_membership',
-        'posts_per_page' => -1,
-        'post_status' => 'publish',
-    );
-
-    $query = new WP_Query($args);
-
-    if ($query->have_posts()) {
-        while ($query->have_posts()) {
-            $query->the_post();
-            $memberships[get_the_ID()] = get_the_title();
-        }
-        wp_reset_postdata();
-    }
-
-    return $memberships;
-}
-
-
 function llms_aweber_integration_menu()
 {
     add_options_page(
@@ -40,14 +17,35 @@ function llms_aweber_integration_menu()
 function llms_aweber_integration_settings_init()
 {
     //register_setting('llms_aweber_integration_settings', 'llms_aweber_client_id');
-    register_setting('llms_aweber_integration_settings', 'llms_membership_id');
-    register_setting('llms_aweber_integration_settings', 'llms_aweber_list_id');
+
+    register_setting('llms_settings_group', 'llms_aweber_list_id');
+    register_setting('llms_settings_group', 'llms_membership_id');
+
     register_setting('llms_aweber_integration_settings', 'llms_aweber_account_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_code_verifier');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_access_token');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_refresh_token');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_token_expiry');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_auth_code');
+
+
+   // Add the AWeber List ID field to the settings section
+   add_settings_field(
+    'llms_aweber_list_id',          // ID
+    'AWeber List ID',               // Title
+    'llms_aweber_list_id_render',   // Callback
+    'llms-aweber-integration',      // Page
+    'llms_aweber_integration_section' // Section
+);
+
+// Add the Membership ID field to the settings section
+add_settings_field(
+    'llms_membership_id',           // ID
+    'Select Membership',            // Title
+    'llms_membership_id_render',    // Callback
+    'llms-aweber-integration',      // Page
+    'llms_aweber_integration_section' // Section
+);
 
     add_settings_section(
         'llms_aweber_integration_section',
@@ -64,15 +62,6 @@ function llms_aweber_integration_settings_init()
         'llms_aweber_integration_section'
     ); 
     */
-
-    // Add the new field to the settings section
-    add_settings_field(
-        'llms_membership_id',           // ID
-        'Select Membership',            // Title
-        'llms_membership_id_render',    // Callback
-        'llms-aweber-integration',           // Page
-        'llms_aweber_integration_section'         // Section
-    );
 
     add_settings_field(
         'llms_aweber_list_id',
@@ -107,17 +96,6 @@ function llms_aweber_integration_settings_init()
     );
 }
 
-function llms_aweber_integration_section_callback()
-{
-    echo 'Enter your AWeber settings below:';
-}
-
-function llms_aweber_client_id_render()
-{
-    //$value = get_option('llms_aweber_client_id', '');
-    //echo '<input type="text" name="llms_aweber_client_id" value="' . esc_attr($value) . '" />';
-}
-
 function llms_aweber_list_id_render() {
     // Get the list of AWeber lists
     $lists = get_aweber_lists();
@@ -131,12 +109,34 @@ function llms_aweber_list_id_render() {
     // Loop through the list to create options
     foreach ($lists as $id => $label) {
         // Check if the current option should be selected
-        $selected = selected($selected_value, $id, false);
+        $selected = ($selected_value == $id) ? 'selected="selected"' : '';
         echo '<option value="' . esc_attr($id) . '" ' . $selected . '>' . esc_html($label) . '</option>';
     }
 
     // End the select element
     echo '</select>';
+}
+
+function get_llms_memberships() {
+    $memberships = array();
+
+    $args = array(
+        'post_type' => 'llms_membership',
+        'posts_per_page' => -1,
+        'post_status' => 'publish',
+    );
+
+    $query = new WP_Query($args);
+
+    if ($query->have_posts()) {
+        while ($query->have_posts()) {
+            $query->the_post();
+            $memberships[get_the_ID()] = get_the_title();
+        }
+        wp_reset_postdata();
+    }
+
+    return $memberships;
 }
 
 function llms_membership_id_render() {
@@ -152,7 +152,7 @@ function llms_membership_id_render() {
     // Loop through the list to create options
     foreach ($memberships as $id => $label) {
         // Check if the current option should be selected
-        $selected = selected($selected_value, $id, false);
+        $selected = ($selected_value == $id) ? 'selected="selected"' : '';
         echo '<option value="' . esc_attr($id) . '" ' . $selected . '>' . esc_html($label) . '</option>';
     }
 
@@ -160,6 +160,22 @@ function llms_membership_id_render() {
     echo '</select>';
 }
 
+function llms_aweber_integration_section_callback()
+{
+    echo 'Enter your AWeber settings below:';
+}
+
+function llms_aweber_client_id_render()
+{
+    //$value = get_option('llms_aweber_client_id', '');
+    //echo '<input type="text" name="llms_aweber_client_id" value="' . esc_attr($value) . '" />';
+}
+
+function llms_aweber_list_id_render()
+{
+    $value = get_option('llms_aweber_list_id', '');
+    echo '<input type="text" name="llms_aweber_list_id" value="' . esc_attr($value) . '" />';
+}
 
 function llms_aweber_account_id_render()
 {
