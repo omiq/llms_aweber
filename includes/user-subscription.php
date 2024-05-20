@@ -24,11 +24,13 @@ function custom_add_user_to_membership_and_aweber($user_id)
 
 function custom_add_existing_user_to_aweber($user_id, $membership_id)
 {
-    error_log( 'User ' . $user_id . ' requested to be added to membership ' . $membership_id );
+
     $specified_membership_id = get_option('llms_aweber_membership_id');
+
     $list_id = get_option('llms_aweber_list_id');
 
     if ($membership_id == $specified_membership_id) {
+        error_log( 'User ' . $user_id . ' requested to be added to membership ' . $membership_id . ' and matches selected membership in admin, adding to list: ' . $list_id);
         subscribe_user_to_aweber($user_id, $list_id);
     }
 }
