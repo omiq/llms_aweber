@@ -85,11 +85,28 @@ function llms_aweber_client_id_render()
     //echo '<input type="text" name="llms_aweber_client_id" value="' . esc_attr($value) . '" />';
 }
 
-function llms_aweber_list_id_render()
-{
-    $value = get_option('llms_aweber_list_id', '');
-    echo '<input type="text" name="llms_aweber_list_id" value="' . esc_attr($value) . '" />';
+function llms_aweber_list_id_render() {
+    // Get the list of AWeber lists
+    $lists = get_aweber_lists();
+
+    // Get the currently saved value
+    $selected_value = get_option('llms_aweber_list_id', '');
+
+    // Start the select element
+    echo '<select name="llms_aweber_list_id">';
+
+    // Loop through the list to create options
+    foreach ($lists as $id => $label) {
+        // Check if the current option should be selected
+        $selected = selected($selected_value, $id, false);
+        echo '<option value="' . esc_attr($id) . '" ' . $selected . '>' . esc_html($label) . '</option>';
+    }
+
+    // End the select element
+    echo '</select>';
 }
+
+
 
 function llms_aweber_account_id_render()
 {

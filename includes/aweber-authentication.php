@@ -172,4 +172,38 @@ function llms_aweber_integration_uninstall()
     delete_option('llms_aweber_refresh_token');
     delete_option('llms_aweber_token_expiry');
 }
+
+function get_aweber_lists() {
+    refresh_aweber_access_token();
+    $access_token = get_option('llms_aweber_access_token');
+    $account_id = get_option('llms_aweber_account_id');
+    $url = "https://api.aweber.com/1.0/accounts/$account_id/lists";
+
+    $response = wp_remote_get($url, array(
+        'headers' => array(
+            "Authorization" => "Bearer $access_token",
+            "Content-Type" => "application/json",
+        ),
+    ));
+
+    if (is_wp_error($response)) {
+        error_log('AWeber list retrieval failed: ' . $response->get_error_message());
+        return array();
+    }
+
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
+
+    if (isset($data['entries']) && is_array($data['entries'])) {
+        $lists = array();
+        foreach ($data['entries'] as $list) {
+            $lists[$list['id']] = $list['name'];
+        }
+        return $lists;
+    } else {
+        error_log('AWeber list retrieval response error: ' . $body);
+        return array();
+    }
+}
+
 ?>
