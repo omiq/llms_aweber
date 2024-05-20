@@ -9,7 +9,7 @@ add_action('llms_user_added_to_membership_level', 'custom_add_existing_user_to_a
 
 function custom_add_user_to_membership_and_aweber($user_id)
 {
-    $membership_id = get_option('llms_aweber_membership_id');
+    $membership_id = get_option('llms_membership_id', '');
     $list_id = get_option('llms_aweber_list_id');
 
 
@@ -25,7 +25,9 @@ function custom_add_user_to_membership_and_aweber($user_id)
 function custom_add_existing_user_to_aweber($user_id, $membership_id)
 {
 
-    $specified_membership_id = get_option('llms_aweber_membership_id');
+
+
+    $specified_membership_id = get_option('llms_membership_id', '');
 
     $list_id = get_option('llms_aweber_list_id');
 
@@ -33,6 +35,12 @@ function custom_add_existing_user_to_aweber($user_id, $membership_id)
         error_log( 'User ' . $user_id . ' requested to be added to membership ' . $membership_id . ' and matches selected membership in admin, adding to list: ' . $list_id);
         subscribe_user_to_aweber($user_id, $list_id);
     }
+    else
+    {
+        error_log( 'User ' . $user_id . ' requested to be added to membership ' . $membership_id . ' BUT DOES NOT selected membership in admin ('. $specified_membership_id.'), can not add to list: ' . $list_id);
+        
+    }
+
 }
 function subscribe_user_to_aweber($user_id, $list_id)
 {
