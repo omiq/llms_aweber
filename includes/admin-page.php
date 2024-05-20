@@ -3,6 +3,29 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
+function get_llms_memberships() {
+    $memberships = array();
+
+    $args = array(
+        'post_type' => 'llms_membership',
+        'posts_per_page' => -1,
+        'post_status' => 'publish',
+    );
+
+    $query = new WP_Query($args);
+
+    if ($query->have_posts()) {
+        while ($query->have_posts()) {
+            $query->the_post();
+            $memberships[get_the_ID()] = get_the_title();
+        }
+        wp_reset_postdata();
+    }
+
+    return $memberships;
+}
+
+
 function llms_aweber_integration_menu()
 {
     add_options_page(
@@ -17,6 +40,7 @@ function llms_aweber_integration_menu()
 function llms_aweber_integration_settings_init()
 {
     //register_setting('llms_aweber_integration_settings', 'llms_aweber_client_id');
+    register_setting('llms_aweber_integration_settings', 'llms_membership_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_list_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_account_id');
     register_setting('llms_aweber_integration_settings', 'llms_aweber_code_verifier');
@@ -40,6 +64,15 @@ function llms_aweber_integration_settings_init()
         'llms_aweber_integration_section'
     ); 
     */
+
+    // Add the new field to the settings section
+    add_settings_field(
+        'llms_membership_id',           // ID
+        'Select Membership',            // Title
+        'llms_membership_id_render',    // Callback
+        'llms-aweber-integration',           // Page
+        'llms_aweber_integration_section'         // Section
+    );
 
     add_settings_field(
         'llms_aweber_list_id',
@@ -106,6 +139,26 @@ function llms_aweber_list_id_render() {
     echo '</select>';
 }
 
+function llms_membership_id_render() {
+    // Get the list of LifterLMS memberships
+    $memberships = get_llms_memberships();
+
+    // Get the currently saved value
+    $selected_value = get_option('llms_membership_id', '');
+
+    // Start the select element
+    echo '<select name="llms_membership_id">';
+
+    // Loop through the list to create options
+    foreach ($memberships as $id => $label) {
+        // Check if the current option should be selected
+        $selected = selected($selected_value, $id, false);
+        echo '<option value="' . esc_attr($id) . '" ' . $selected . '>' . esc_html($label) . '</option>';
+    }
+
+    // End the select element
+    echo '</select>';
+}
 
 
 function llms_aweber_account_id_render()
