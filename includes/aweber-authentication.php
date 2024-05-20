@@ -149,7 +149,7 @@ function refresh_aweber_access_token()
             update_option('llms_aweber_token_expiry', time() + $tokens['expires_in']);
             $result_message = 'AWeber token refresh successful.';
         } else {
-            $result_message = 'AWeber token refresh response is missing required fields: ' . $body;
+            $result_message = 'AWeber token refresh response is missing required fields: ' . $body . ' ' . $client_id . ' refresh_token: '. $refresh_token;
         }
     }
 
