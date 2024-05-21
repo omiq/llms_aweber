@@ -15,6 +15,14 @@ require_once plugin_dir_path(__FILE__) . 'includes/admin-page.php';
 require_once plugin_dir_path(__FILE__) . 'includes/aweber-authentication.php';
 require_once plugin_dir_path(__FILE__) . 'includes/user-subscription.php';
 
+function add_text_before_login_form() {
+    echo do_shortcode('[magic_login_form redirect_to="https://www.chrisg.com/dashboard/"]');
+	echo("<p>&nbsp;</p>");
+	echo("<p>Alternatively, use your username and password below:</p>");
+}
+
+add_action( 'llms_before_person_login_form', 'add_text_before_login_form' );
+
 // Register settings
 add_action('admin_init', 'llms_aweber_integration_settings_init');
 
